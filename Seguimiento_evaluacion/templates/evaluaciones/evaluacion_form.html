@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Nueva Evaluación</h2>
+    
+    <form id="evaluacionForm" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="docente" class="form-label">Docente</label>
+            <select class="form-select" id="docente" name="docente">
+                {% for docente in docentes %}
+                    <option value="{{ docente.id }}">{{ docente }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="mb-3">
+            <label for="puntaje" class="form-label">Puntaje General</label>
+            <input type="number" class="form-control" id="puntaje" name="puntaje_general" step="0.01" min="0" max="5">
+        </div>
+        
+        <div class="mb-3">
+            <label for="comentarios" class="form-label">Comentarios</label>
+            <textarea class="form-control" id="comentarios" name="comentarios" rows="3"></textarea>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Guardar Evaluación</button>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+    const validator = new JustValidate('#evaluacionForm');
+    
+    validator
+        .addField('#docente', [
+            {
+                rule: 'required',
+                errorMessage: 'Por favor seleccione un docente'
+            }
+        ])
+        .addField('#puntaje', [
+            {
+                rule: 'required',
+                errorMessage: 'El puntaje es requerido'
+            },
+            {
+                rule: 'number',
+                errorMessage: 'Debe ser un número'
+            },
+            {
+                rule: 'minNumber',
+                value: 0,
+                errorMessage: 'El puntaje mínimo es 0'
+            },
+            {
+                rule: 'maxNumber',
+                value: 5,
+                errorMessage: 'El puntaje máximo es 5'
+            }
+        ])
+        .onSuccess((event) => {
+            event.target.submit();
+        });
+</script>
+{% endblock %}
+{% endblock %}

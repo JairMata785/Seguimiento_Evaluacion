@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Lista de Evaluaciones</h2>
+        <button class="btn btn-primary" onclick="showAddEvaluacionModal()">
+            <i class="fas fa-plus"></i> Nueva Evaluación
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="table" id="evaluacionesTable">
+                <thead>
+                    <tr>
+                        <th>Docente</th>
+                        <th>Semestre</th>
+                        <th>Puntaje General</th>
+                        <th>Fecha Evaluación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evaluacion in evaluaciones %}
+                    <tr>
+                        <td>{{ evaluacion.docente }}</td>
+                        <td>{{ evaluacion.semestre }}</td>
+                        <td>{{ evaluacion.puntaje_general }}</td>
+                        <td>{{ evaluacion.fecha_evaluacion }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="editEvaluacion({{ evaluacion.id }})">
+                                Editar
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteEvaluacion({{ evaluacion.id }})">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize DataTable
+    const dataTable = new simpleDatatables.DataTable("#evaluacionesTable");
+
+    function showAddEvaluacionModal() {
+        Swal.fire({
+            title: 'Nueva Evaluación',
+            html: `
+                <form id="evaluacionForm">
+                    <div class="mb-3">
+                        <label for="docente" class="form-label">Docente</label>
+                        <select class="form-select" id="docente" name="docente">
+                            {% for docente in docentes %}
+                                <option value="{{ docente.id }}">{{ docente }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="semestre" class="form-label">Semestre</label>
+                        <select class="form-select" id="semestre" name="semestre">
+                            {% for semestre in semestres %}
+                                <option value="{{ semestre.id }}">{{ semestre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="puntaje" class="form-label">Puntaje General</label>
+                        <input type="number" class="form-control" id="puntaje" name="puntaje_general" 
+                               step="0.01" min="0" max="5">
+                    </div>
+                    <div class="mb-3">
+                        <label for="comentarios" class="form-label">Comentarios</label>
+                        <textarea class="form-control" id="comentarios" name="comentarios" rows="3"></textarea>
+                    </div>
+                </form>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                const validator = new JustValidate('#evaluacionForm');
+                validator
+                    .addField('#docente', [{ rule: 'required' }])
+                    .addField('#semestre', [{ rule: 'required' }])
+                    .addField('#puntaje', [
+                        { rule: 'required' },
+                        { rule: 'number' },
+                        { rule: 'minNumber', value: 0 },
+                        { rule: 'maxNumber', value: 5 }
+                    ]);
+            }
+        });
+    }
+
+    function editEvaluacion(id) {
+        // Implementation for editing
+        Swal.fire({
+            title: 'Editar Evaluación',
+            text: `Editando evaluación ${id}`,
+            icon: 'info'
+        });
+    }
+
+    function deleteEvaluacion(id) {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "Esta acción no se puede deshacer",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Implementation for deletion
+                Swal.fire(
+                    'Eliminado',
+                    'La evaluación ha sido eliminada.',
+                    'success'
+                );
+            }
+        });
+    }
+</script>
+{% endblock %}

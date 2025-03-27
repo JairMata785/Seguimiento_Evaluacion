@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Reportes y Estadísticas</h2>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Promedio Mensual de Evaluaciones</h5>
+                    <canvas id="promediosMensualesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Mejores Docentes</h5>
+                    <canvas id="mejoresDocentesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Promedio Mensual Chart
+    const ctxMensual = document.getElementById('promediosMensualesChart').getContext('2d');
+    new Chart(ctxMensual, {
+        type: 'line',
+        data: {
+            labels: [{% for pm in promedios_mensuales %}'{{ pm.mes|date:"F Y" }}',{% endfor %}],
+            datasets: [{
+                label: 'Promedio Mensual',
+                data: [{% for pm in promedios_mensuales %}{{ pm.promedio }},{% endfor %}],
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        }
+    });
+
+    // Mejores Docentes Chart
+    const ctxDocentes = document.getElementById('mejoresDocentesChart').getContext('2d');
+    new Chart(ctxDocentes, {
+        type: 'bar',
+        data: {
+            labels: [{% for doc in mejores_docentes %}'{{ doc.nombre }} {{ doc.apellidos }}',{% endfor %}],
+            datasets: [{
+                label: 'Promedio de Evaluación',
+                data: [{% for doc in mejores_docentes %}{{ doc.promedio|default:0 }},{% endfor %}],
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

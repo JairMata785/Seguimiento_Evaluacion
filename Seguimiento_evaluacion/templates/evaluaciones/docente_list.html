@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Lista de Docentes</h2>
+        <button class="btn btn-primary" onclick="showAddDocenteModal()">
+            <i class="fas fa-plus"></i> Agregar Docente
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="table" id="docentesTable">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellidos</th>
+                        <th>Email</th>
+                        <th>Departamento</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for docente in docentes %}
+                    <tr>
+                        <td>{{ docente.nombre }}</td>
+                        <td>{{ docente.apellidos }}</td>
+                        <td>{{ docente.email }}</td>
+                        <td>{{ docente.departamento }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="editDocente({{ docente.id }})">Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteDocente({{ docente.id }})">Eliminar</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize DataTable
+    const dataTable = new simpleDatatables.DataTable("#docentesTable");
+
+    function showAddDocenteModal() {
+        Swal.fire({
+            title: 'Agregar Nuevo Docente',
+            html: `
+                <form id="addDocenteForm">
+                    <div class="mb-3">
+                        <input type="text" id="nombre" class="form-control" placeholder="Nombre">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" id="apellidos" class="form-control" placeholder="Apellidos">
+                    </div>
+                    <div class="mb-3">
+                        <input type="email" id="email" class="form-control" placeholder="Email">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" id="departamento" class="form-control" placeholder="Departamento">
+                    </div>
+                </form>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar',
+            cancelButtonText: 'Cancelar'
+        });
+    }
+</script>
+{% endblock %}

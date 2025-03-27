@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Seguimiento de Evaluación Docente</h1>
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="filterByCarrera('INF')">Informática</button>
+            <button class="btn btn-primary" onclick="filterByCarrera('ISC')">Sistemas</button>
+            <button class="btn btn-secondary" onclick="filterByCarrera('all')">Todos</button>
+        </div>
+    </div>
+
+    <!-- Stats Cards Row -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card primary">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs text-uppercase mb-1">Total Docentes</div>
+                            <div class="h5 mb-0">{{ total_docentes }}</div>
+                            <div class="text-xs mt-2">
+                                INF: {{ total_docentes_inf }} | ISC: {{ total_docentes_isc }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chalkboard-teacher stats-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card success">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs text-uppercase mb-1">Promedio General</div>
+                            <div class="h5 mb-0">{{ promedio_general|default:"4.5" }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-star stats-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card warning">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs text-uppercase mb-1">Evaluaciones</div>
+                            <div class="h5 mb-0">{{ total_evaluaciones }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list stats-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row">
+        <div class="col-xl-6 col-lg-6">
+            <div class="chart-card mb-4">
+                <div class="card-header">
+                    <h5 class="m-0 font-weight-bold">Promedio por Carrera</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="carreraChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-lg-6">
+            <div class="chart-card mb-4">
+                <div class="card-header">
+                    <h5 class="m-0 font-weight-bold">Comparativa de Evaluaciones</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="comparativaChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-8 col-lg-7">
+            <div class="chart-card mb-4">
+                <div class="card-header">
+                    <h5 class="m-0 font-weight-bold">Promedio por Semestre</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="semestreChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-5">
+            <div class="chart-card mb-4">
+                <div class="card-header">
+                    <h5 class="m-0 font-weight-bold">Distribución de Evaluaciones</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="distribucionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Row -->
+    <div class="row">
+        <div class="col-12">
+            <div class="table-card mb-4">
+                <div class="card-header">
+                    <h5 class="m-0 font-weight-bold">Últimas Evaluaciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="evaluacionesTable">
+                            <thead>
+                                <tr>
+                                    <th>Docente</th>
+                                    <th>Semestre</th>
+                                    <th>Puntaje</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evaluacion in evaluaciones %}
+                                <tr>
+                                    <td>{{ evaluacion.docente }}</td>
+                                    <td>{{ evaluacion.semestre }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" 
+                                                 role="progressbar" 
+                                                 style="width: {{ evaluacion.puntaje_general|multiply:20 }}%">
+                                                {{ evaluacion.puntaje_general }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ evaluacion.fecha_evaluacion|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-success">Completada</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize DataTable with career filter
+    const table = new simpleDatatables.DataTable("#evaluacionesTable", {
+        searchable: true,
+        fixedHeight: true,
+        columns: [{
+            select: 0,
+            sortable: true,
+            searchable: true
+        }]
+    });
+
+    function filterByCarrera(carrera) {
+        if (carrera === 'all') {
+            table.search('');
+        } else {
+            table.search(carrera === 'INF' ? 'Informática' : 'Sistemas');
+        }
+    }
+
+    // Carrera Chart
+    const ctxCarrera = document.getElementById('carreraChart').getContext('2d');
+    new Chart(ctxCarrera, {
+        type: 'bar',
+        data: {
+            labels: ['Informática', 'Sistemas Computacionales'],
+            datasets: [{
+                label: 'Promedio de Evaluaciones por Carrera',
+                data: [4.3, 4.4],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 99, 132, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5
+                }
+            }
+        }
+    });
+
+    // Comparativa Chart
+    const ctxComparativa = document.getElementById('comparativaChart').getContext('2d');
+    new Chart(ctxComparativa, {
+        type: 'line',
+        data: {
+            labels: ['2023-1', '2023-2', '2024-1'],
+            datasets: [{
+                label: 'Informática',
+                data: [4.2, 4.3, 4.4],
+                borderColor: 'rgba(54, 162, 235, 1)',
+                fill: false
+            }, {
+                label: 'Sistemas Computacionales',
+                data: [4.3, 4.4, 4.5],
+                borderColor: 'rgba(255, 99, 132, 1)',
+                fill: false
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5
+                }
+            }
+        }
+    });
+
+    // Semestre Chart
+    const ctxSemestre = document.getElementById('semestreChart').getContext('2d');
+    new Chart(ctxSemestre, {
+        type: 'bar',
+        data: {
+            labels: [{% for ps in promedios_semestre %}'{{ ps.semestre__nombre }}',{% endfor %}],
+            datasets: [{
+                label: 'Promedio por Semestre',
+                data: [{% for ps in promedios_semestre %}{{ ps.promedio|floatformat:2 }},{% endfor %}],
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5,
+                    ticks: {
+                        stepSize: 0.5
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Promedio: ${context.raw}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Distribución Chart
+    const ctxDistribucion = document.getElementById('distribucionChart').getContext('2d');
+    new Chart(ctxDistribucion, {
+        type: 'doughnut',
+        data: {
+            labels: ['Excelente (4.5-5.0)', 'Bueno (4.0-4.4)', 'Regular (3.5-3.9)', 'Bajo (3.0-3.4)', 'Deficiente (<3.0)'],
+            datasets: [{
+                data: [
+                    {{ distribucion_evaluaciones.Excelente }},
+                    {{ distribucion_evaluaciones.Bueno }},
+                    {{ distribucion_evaluaciones.Regular }},
+                    {{ distribucion_evaluaciones.Bajo }},
+                    {{ distribucion_evaluaciones.Deficiente }}
+                ],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.8)',   // Verde azulado
+                    'rgba(54, 162, 235, 0.8)',    // Azul
+                    'rgba(255, 206, 86, 0.8)',    // Amarillo
+                    'rgba(255, 159, 64, 0.8)',    // Naranja
+                    'rgba(255, 99, 132, 0.8)'     // Rojo
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 20,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value * 100) / total).toFixed(1);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
