@@ -1,33 +1,132 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container">
-    <h2 class="mb-4">Reportes y Estadísticas</h2>
-
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card">
+<div class="container-fluid">
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card border-left-primary">
                 <div class="card-body">
-                    <h5 class="card-title">Promedio Mensual de Evaluaciones</h5>
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-primary mb-1">Total Docentes</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ total_docentes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card border-left-success">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-success mb-1">Promedio General</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ promedio_general|floatformat:2 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-star fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Promedio Mensual de Evaluaciones</h5>
+                </div>
+                <div class="card-body">
                     <canvas id="promediosMensualesChart"></canvas>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Mejores Docentes</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Mejores Docentes</h5>
                     <canvas id="mejoresDocentesChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Distribución por Carrera</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="distribucionCarreraChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tendencia de Evaluaciones</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="tendenciaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table of Recent Evaluations -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Evaluaciones Recientes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="evaluacionesTable">
+                            <thead>
+                                <tr>
+                                    <th>Docente</th>
+                                    <th>Carrera</th>
+                                    <th>Puntaje</th>
+                                    <th>Fecha</th>
+                                    <th>Semestre</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for eval in evaluaciones_recientes %}
+                                <tr>
+                                    <td>{{ eval.docente.nombre }} {{ eval.docente.apellidos }}</td>
+                                    <td>{{ eval.docente.get_carrera_display }}</td>
+                                    <td>{{ eval.puntaje_general }}</td>
+                                    <td>{{ eval.fecha_evaluacion }}</td>
+                                    <td>{{ eval.semestre.nombre }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    // Initialize DataTable
+    const dataTable = new simpleDatatables.DataTable("#evaluacionesTable");
+
     // Promedio Mensual Chart
     const ctxMensual = document.getElementById('promediosMensualesChart').getContext('2d');
     new Chart(ctxMensual, {
@@ -38,8 +137,18 @@
                 label: 'Promedio Mensual',
                 data: [{% for pm in promedios_mensuales %}{{ pm.promedio }},{% endfor %}],
                 borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1
+                tension: 0.1,
+                fill: false
             }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5
+                }
+            }
         }
     });
 
@@ -58,6 +167,62 @@
             }]
         },
         options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5
+                }
+            }
+        }
+    });
+
+    // Distribución por Carrera Chart
+    const ctxCarrera = document.getElementById('distribucionCarreraChart').getContext('2d');
+    new Chart(ctxCarrera, {
+        type: 'pie',
+        data: {
+            labels: ['Informática', 'Sistemas Computacionales'],
+            datasets: [{
+                data: [{{ total_docentes_inf }}, {{ total_docentes_isc }}],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 99, 132, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Tendencia Chart
+    const ctxTendencia = document.getElementById('tendenciaChart').getContext('2d');
+    new Chart(ctxTendencia, {
+        type: 'line',
+        data: {
+            labels: [{% for ts in tendencia_semestral %}'{{ ts.semestre__nombre }}',{% endfor %}],
+            datasets: [{
+                label: 'Tendencia de Evaluaciones',
+                data: [{% for ts in tendencia_semestral %}{{ ts.promedio }},{% endfor %}],
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
             scales: {
                 y: {
                     beginAtZero: true,

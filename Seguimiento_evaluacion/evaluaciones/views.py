@@ -66,7 +66,33 @@ def reportes_view(request):
         promedio=Avg('evaluacion__puntaje_general')
     ).order_by('-promedio')[:5]
 
+    # Get recent evaluations
+    evaluaciones_recientes = Evaluacion.objects.select_related(
+        'docente', 'semestre'
+    ).order_by('-fecha_evaluacion')[:10]
+
+    # Get semester trend
+    tendencia_semestral = Evaluacion.objects.values(
+        'semestre__nombre'
+    ).annotate(
+        promedio=Avg('puntaje_general')
+    ).order_by('semestre__nombre')
+
+    # Get total counts
+    total_docentes = Docente.objects.count()
+    total_docentes_inf = Docente.objects.filter(carrera='INF').count()
+    total_docentes_isc = Docente.objects.filter(carrera='ISC').count()
+    promedio_general = Evaluacion.objects.aggregate(
+        Avg('puntaje_general')
+    )['puntaje_general__avg']
+
     return render(request, 'evaluaciones/reportes.html', {
         'promedios_mensuales': promedios_mensuales,
         'mejores_docentes': mejores_docentes,
+        'evaluaciones_recientes': evaluaciones_recientes,
+        'tendencia_semestral': tendencia_semestral,
+        'total_docentes': total_docentes,
+        'total_docentes_inf': total_docentes_inf,
+        'total_docentes_isc': total_docentes_isc,
+        'promedio_general': promedio_general,
     })
